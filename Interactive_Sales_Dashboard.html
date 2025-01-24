@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Sales Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .chart-container {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        input[type="file"] {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive Sales Performance Dashboard</h1>
+    <input type="file" id="upload" accept="application/json">
+    <div id="dashboard">
+        <div id="region-chart" class="chart-container"></div>
+        <div id="category-chart" class="chart-container"></div>
+        <div id="growth-chart" class="chart-container"></div>
+        <div id="discounts-chart" class="chart-container"></div>
+        <div id="satisfaction-chart" class="chart-container"></div>
+    </div>
+
+    <script>
+        document.getElementById('upload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = JSON.parse(e.target.result);
+                    generateDashboard(data);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function generateDashboard(data) {
+            // Extract relevant fields from the data
+            const regions = [...new Set(data.map(item => item['Region']))];
+            const categories = [...new Set(data.map(item => item['Product Category']))];
+
+            // Aggregate data for each visualization
+            const regionSales = regions.map(region => {
+                return data.filter(item => item['Region'] === region).reduce((sum, item) => sum + item['Total Sales ($)'], 0);
+            });
+
+            const categorySales = categories.map(category => {
+                return data.filter(item => item['Product Category'] === category).reduce((sum, item) => sum + item['Total Sales ($)'], 0);
+            });
+
+            const dates = data.map(item => item['Date']);
+            const growthRates = data.map(item => item['Sales Growth (%)']);
+
+            const discounts = data.map(item => item['Discounts Given ($)']);
+            const avgPrices = data.map(item => item['Average Price per Unit ($)']);
+
+            const satisfactionRates = data.map(item => item['Customer Satisfaction (%)']);
+            const netRevenues = data.map(item => item['Net Revenue ($)']);
+
+            // Create visualizations
+
+            // 1. Sales Performance by Region
+            Plotly.newPlot('region-chart', [{
+                x: regions,
+                y: regionSales,
+                type: 'bar'
+            }], {
+                title: 'Sales Performance by Region',
+                xaxis: { title: 'Region' },
+                yaxis: { title: 'Total Sales ($)' }
+            });
+
+            // 2. Product Category Performance
+            Plotly.newPlot('category-chart', [{
+                labels: categories,
+                values: categorySales,
+                type: 'pie'
+            }], {
+                title: 'Product Category Performance'
+            });
+
+            // 3. Sales Growth Trend Over Time
+            Plotly.newPlot('growth-chart', [{
+                x: dates,
+                y: growthRates,
+                type: 'line'
+            }], {
+                title: 'Sales Growth Trend Over Time',
+                xaxis: { title: 'Date' },
+                yaxis: { title: 'Sales Growth (%)' }
+            });
+
+            // 4. Average Price vs Discounts Given
+            Plotly.newPlot('discounts-chart', [{
+                x: discounts,
+                y: avgPrices,
+                mode: 'markers',
+                type: 'scatter',
+                marker: { size: 10 }
+            }], {
+                title: 'Average Price vs Discounts Given',
+                xaxis: { title: 'Discounts Given ($)' },
+                yaxis: { title: 'Average Price per Unit ($)' }
+            });
+
+            // 5. Customer Satisfaction vs Net Revenue
+            Plotly.newPlot('satisfaction-chart', [
+                {
+                    x: satisfactionRates,
+                    y: netRevenues,
+                    mode: 'markers',
+                    type: 'scatter',
+                    marker: { size: 10 }
+                }
+            ], {
+                title: 'Customer Satisfaction vs Net Revenue',
+                xaxis: { title: 'Customer Satisfaction (%)' },
+                yaxis: { title: 'Net Revenue ($)' }
+            });
+        }
+    </script>
+</body>
+</html>
